@@ -1381,9 +1381,14 @@
                         <small>Scan to exit</small>
                     </div>
                 </div>
-                <button class="btn-primary" onclick="resetApp()">
-                    Park Another Vehicle
-                </button>
+               <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+    <button class="btn-primary" onclick="rollbackBooking()" style="background: linear-gradient(135deg, #f44336, #e53935);">
+        🔄 Rollback Booking
+    </button>
+    <button class="btn-primary" onclick="resetApp()">
+        Park Another Vehicle
+    </button>
+</div>
             </div>
         </div>
     </div>
@@ -1406,6 +1411,7 @@
             slot: null,
             ticketId: "",
             requestId: ""
+            lastBooking: null
         };
 
         // Background animation controller
@@ -1650,6 +1656,14 @@
                     appState.requestId = result.request_id;
                     appState.slot = result.slot_id;
                     
+                    // Save booking details for rollback
+    appState.lastBooking = {
+        requestId: result.request_id,
+        slotId: result.slot_id,
+        zone: result.zone,
+        vehicleId: appState.carId,
+        vehicleType: appState.carType
+    };
                     document.getElementById("ticketId").textContent = result.request_id;
                     document.getElementById("confirmVehicle").textContent = appState.carType;
                     document.getElementById("confirmId").textContent = appState.carId;
@@ -1667,6 +1681,53 @@
             }
         }
 
+        // Rollback the last booking
+async function rollbackBooking() {
+    if (!appState.lastBooking) {
+        alert('No booking to rollback!');
+        return;
+    }
+    
+    const confirmRollback = confirm(
+        Are you sure you want to cancel booking for slot ${appState.lastBooking.slotId}?\n\n +
+        Vehicle: ${appState.lastBooking.vehicleType} (${appState.lastBooking.vehicleId})\n +
+        Zone: ${appState.lastBooking.zone}
+    );
+    
+    if (!confirmRollback) return;
+    
+    try {
+        const response = await fetch('/api/rollback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                request_id: appState.lastBooking.requestId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(
+                ✅ Booking Cancelled Successfully!\n\n +
+                Slot ${appState.lastBooking.slotId} is now available.\n +
+                Zone: ${appState.lastBooking.zone}\n +
+                Available slots: ${result.available_slots}
+            );
+            
+            appState.lastBooking = null;
+            
+            goToScreen("screen-zone");
+        } else {
+            alert('❌ Rollback failed: ' + (result.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error during rollback:', error);
+        alert('❌ Error cancelling booking. Please try again.');
+    }
+}
         // Reset app to start over
         function resetApp() {
             appState = {
@@ -1676,7 +1737,8 @@
                 zone: "",
                 slot: null,
                 ticketId: "",
-                requestId: ""
+                requestId: "",
+                lastBooking: null
             };
             
             goToScreen("screen-welcome");

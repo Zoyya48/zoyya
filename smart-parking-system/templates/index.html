@@ -1697,15 +1697,12 @@ async function rollbackBooking() {
     if (!confirmRollback) return;
     
     try {
-        const response = await fetch('/api/rollback', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                request_id: appState.lastBooking.requestId
-            })
-        });
+       const response = await fetch(/api/cancel/${appState.lastBooking.requestId}, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
         
         const result = await response.json();
         

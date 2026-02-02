@@ -532,6 +532,7 @@
             backdrop-filter: blur(10px);
             position: relative;
             overflow: hidden;
+            animation: cardFloat 3s ease-in-out infinite;
         }
        
 .vehicle-card::before {
@@ -548,6 +549,14 @@
 
 .vehicle-card:hover::before {
     left: 100%;
+}
+@keyframes cardFloat {
+    0%, 100% { 
+        transform: translateY(0px);
+    }
+    50% { 
+        transform: translateY(-8px);
+    }
 }
 
         .vehicle-card:hover {

@@ -410,11 +410,12 @@
             text-shadow: 0 0 30px rgba(255, 100, 50, 0.5);
             transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             cursor: pointer;
+            display: inline-block;
         }
         .logo:hover {
-    transform: rotate(360deg) scale(1.2);
-    text-shadow: 0 0 50px rgba(255, 100, 50, 1);
-    transition: transform 1s ease;
+    transform: rotate(360deg) scale(1.3);
+    text-shadow: 0 0 60px rgba(255, 100, 50, 1);
+    filter: brightness(1.2);
 }
 
         @keyframes bounce {
@@ -1380,14 +1381,9 @@
                         <small>Scan to exit</small>
                     </div>
                 </div>
-               <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-    <button class="btn-primary" onclick="rollbackBooking()" style="background: linear-gradient(135deg, #f44336, #e53935);">
-        🔄 Rollback Booking
-    </button>
-    <button class="btn-primary" onclick="resetApp()">
-        Park Another Vehicle
-    </button>
-</div>
+                <button class="btn-primary" onclick="resetApp()">
+                    Park Another Vehicle
+                </button>
             </div>
         </div>
     </div>
@@ -1409,8 +1405,7 @@
             zone: "",
             slot: null,
             ticketId: "",
-            requestId: "",
-            lastBooking: null
+            requestId: ""
         };
 
         // Background animation controller
@@ -1655,14 +1650,6 @@
                     appState.requestId = result.request_id;
                     appState.slot = result.slot_id;
                     
-                    // Save booking details for rollback
-    appState.lastBooking = {
-        requestId: result.request_id,
-        slotId: result.slot_id,
-        zone: result.zone,
-        vehicleId: appState.carId,
-        vehicleType: appState.carType
-    };
                     document.getElementById("ticketId").textContent = result.request_id;
                     document.getElementById("confirmVehicle").textContent = appState.carType;
                     document.getElementById("confirmId").textContent = appState.carId;
@@ -1680,50 +1667,6 @@
             }
         }
 
-        // Rollback the last booking
-async function rollbackBooking() {
-    if (!appState.lastBooking) {
-        alert('No booking to rollback!');
-        return;
-    }
-    
-    const confirmRollback = confirm(
-        Are you sure you want to cancel booking for slot ${appState.lastBooking.slotId}?\n\n +
-        Vehicle: ${appState.lastBooking.vehicleType} (${appState.lastBooking.vehicleId})\n +
-        Zone: ${appState.lastBooking.zone}
-    );
-    
-    if (!confirmRollback) return;
-    
-    try {
-       const response = await fetch(/api/cancel/${appState.lastBooking.requestId}, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    }
-});
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert(
-                ✅ Booking Cancelled Successfully!\n\n +
-                Slot ${appState.lastBooking.slotId} is now available.\n +
-                Zone: ${appState.lastBooking.zone}\n +
-                Available slots: ${result.available_slots}
-            );
-            
-            appState.lastBooking = null;
-            
-            goToScreen("screen-zone");
-        } else {
-            alert('❌ Rollback failed: ' + (result.message || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Error during rollback:', error);
-        alert('❌ Error cancelling booking. Please try again.');
-    }
-}
         // Reset app to start over
         function resetApp() {
             appState = {
@@ -1733,8 +1676,7 @@ async function rollbackBooking() {
                 zone: "",
                 slot: null,
                 ticketId: "",
-                requestId: "",
-                lastBooking: null
+                requestId: ""
             };
             
             goToScreen("screen-welcome");
